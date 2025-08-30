@@ -1,0 +1,93 @@
+version: '3.8'
+
+services:
+  # Banco de dados MySQL
+  mysql:
+    image: mysql:8.0
+    container_name: precificacao_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d
+    networks:
+      - precificacao_network
+
+  # Backend Node.js
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: precificacao_backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      - mysql
+    networks:
+      - precificacao_network
+    command: sh -c "sleep 20 && npx prisma migrate deploy && npm run dev"
+
+
+  # Frontend React
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: precificacao_frontend
+    restart: unless-stopped
+    environment:
+      - REACT_APP_API_URL=http://localhost:3001
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - precificacao_network
+    stdin_open: true
+    tty: true
+
+  # Prisma Studio (opcional, para visualizar dados)
+  prisma-studio:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: precificacao_prisma_studio
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: "mysql://dev_user:dev_password@mysql:3306/precificacao_3d"
+    ports:
+      - "5555:5555"
+    volumes:
+      - ./backend/prisma:/app/prisma
+      - ./backend/src:/app/src
+    depends_on:
+      - mysql
+    networks:
+      - precificacao_network
+    command: sh -c "sleep 15 && npx prisma studio --hostname 0.0.0.0"
+    profiles:
+      - studio
+
+volumes:
+  mysql_data:
+
+networks:
+  precificacao_network:
+    driver: bridge
