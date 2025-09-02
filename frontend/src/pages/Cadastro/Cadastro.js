@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import './Cadastro.module.css';
+import style from './Cadastro.module.css';
 
 const Cadastro = () => {
   const [email, setEmail] = useState('');
@@ -9,8 +9,8 @@ const Cadastro = () => {
   const [confirmarSenha, setConfirmarSenha] = useState('');
   const [erro, setErro] = useState('');
   const [carregando, setCarregando] = useState(false);
-  
-  const { registrar } = useAuth();
+
+  const { cadastrar } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -38,8 +38,8 @@ const Cadastro = () => {
     }
 
     try {
-      const resultado = await registrar(email, senha);
-      
+      const resultado = await cadastrar(email, senha);
+
       if (resultado.sucesso) {
         navigate('/dashboard');
       } else {
@@ -52,23 +52,34 @@ const Cadastro = () => {
     }
   };
 
+  // Handlers para login social (apenas front, sem integração real)
+  const handleGoogle = (e) => {
+    e.preventDefault();
+    alert('Login com Google ainda não implementado.');
+  };
+
+  const handleFacebook = (e) => {
+    e.preventDefault();
+    alert('Login com Facebook ainda não implementado.');
+  };
+
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <div className="auth-header">
+    <div className={style['auth-container']}>
+      <div className={style['auth-card']}>
+        <div className={style['auth-header']}>
           <h1>Precificação 3D</h1>
           <h2>Criar sua conta</h2>
           <p>Comece a gerenciar suas planilhas gratuitamente</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="auth-form">
+        <form onSubmit={handleSubmit} className={style['auth-form']}>
           {erro && (
-            <div className="error-message">
+            <div className={style['error-message']}>
               {erro}
             </div>
           )}
 
-          <div className="form-group">
+          <div className={style['form-group']}>
             <label htmlFor="email">Email</label>
             <input
               type="email"
@@ -80,7 +91,7 @@ const Cadastro = () => {
             />
           </div>
 
-          <div className="form-group">
+          <div className={style['form-group']}>
             <label htmlFor="senha">Senha</label>
             <input
               type="password"
@@ -92,7 +103,7 @@ const Cadastro = () => {
             />
           </div>
 
-          <div className="form-group">
+          <div className={style['form-group']}>
             <label htmlFor="confirmarSenha">Confirmar Senha</label>
             <input
               type="password"
@@ -104,22 +115,41 @@ const Cadastro = () => {
             />
           </div>
 
-          <button 
-            type="submit" 
-            className="auth-button"
+          <button
+            type="submit"
+            className={style['auth-button']}
             disabled={carregando}
           >
             {carregando ? 'Criando conta...' : 'Criar conta'}
           </button>
         </form>
 
-        <div className="auth-footer">
+        <div className={style['auth-footer']}>
           <p>
             Já tem uma conta?{' '}
-            <Link to="/login" className="auth-link">
+            <Link to="/login" className={style['auth-link']}>
               Entre aqui
             </Link>
           </p>
+        </div>
+
+        <div className={style['social-login']}>
+          <button
+            className={style['google-button']}
+            onClick={handleGoogle}
+            type="button"
+          >
+            <span style={{ marginRight: 8 }}>🔵</span>
+            Entrar com Google
+          </button>
+          <button
+            className={style['facebook-button']}
+            onClick={handleFacebook}
+            type="button"
+          >
+            <span style={{ marginRight: 8 }}>📘</span>
+            Entrar com Facebook
+          </button>
         </div>
       </div>
     </div>

@@ -1,11 +1,10 @@
 const express = require('express');
 const dotenv = require('dotenv');
-const cors = require('cors');
-const helmet = require('helmet');
 const http = require('http');
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
+const cors = require('cors');
 
 // Carregar variáveis de ambiente
 dotenv.config();
@@ -20,83 +19,17 @@ const { conectarBanco } = require('./config/db');
 // Middlewares globais
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
-app.use(helmet());
 
-// CORS com controle de origem
-const allowedOrigins = [
-  'http://localhost:3000',
-  'https://seusite.com.br'
-];
-
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Origem não permitida pelo CORS'));
-    }
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true,
-}));
+// CORS
+app.use(cors());
 
 // Rotas
 const usuariosRoutes = require('./routes/usuariosRoutes');
-const planilhasRoutes = require('./routes/planilhasRoutes');
-
 app.use('/api/usuarios', usuariosRoutes);
-app.use('/api/planilhas', planilhasRoutes);
 
-// Rota de teste
+// Remova todos os middlewares e rotas customizadas
 app.get('/', (req, res) => {
-  res.json({
-    message: 'API de Precificação 3D funcionando!',
-    timestamp: new Date().toISOString(),
-    version: '2.0.0'
-  });
-});
-
-// Rota de saúde
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'OK',
-    service: 'Precificação 3D API',
-    timestamp: new Date().toISOString()
-  });
-});
-
-// Servir arquivos estáticos (ex: uploads)
-app.use('/uploads', (req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-  next();
-}, express.static(path.join(__dirname, 'uploads')));
-
-// Servir frontend em produção
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, 'frontend', 'build')));
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'frontend', 'build', 'index.html'));
-  });
-}
-
-// Middleware para rotas não encontradas
-app.use('*', (req, res) => {
-  res.status(404).json({
-    erro: 'Rota não encontrada',
-    metodo: req.method,
-    url: req.originalUrl
-  });
-});
-
-// Middleware de tratamento de erros
-app.use((error, req, res, next) => {
-  console.error('Erro não tratado:', error);
-  res.status(500).json({
-    erro: 'Erro interno do servidor',
-    timestamp: new Date().toISOString()
-  });
+  res.json({ message: 'API funcionando!' });
 });
 
 // Inicialização do servidor

@@ -1,4 +1,4 @@
-// Arquivo para testes manuais da API
+/* // Arquivo para testes manuais da API
 // Execute com: node utils/testesApi.js
 
 const axios = require('axios');
@@ -57,11 +57,11 @@ async function executarTestes() {
       senha: '123456'
     };
 
-    const registro = await api.post('/api/usuarios/registrar', novoUsuario);
-    log('Usuário registrado', registro.data);
+    const cadastro = await api.post('/api/usuarios/cadastrar', novoUsuario);
+    log('Usuário registrado', cadastro.data);
     
     // Salvar token
-    token = registro.data.token;
+    token = cadastro.data.token;
 
     // 3. Fazer login
     console.log('\n🔐 Fazendo login...');
@@ -189,3 +189,4 @@ if (require.main === module) {
 
 module.exports = { executarTestes };
 
+ */

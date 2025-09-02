@@ -1,15 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const { 
-  registrarUsuario, 
+  cadastrarUsuario, 
   loginUsuario, 
   obterPerfil, 
   atualizarPerfil 
 } = require('../controllers/usuarioController');
-const { autenticarToken } = require('../middleware/auth');
+const { autenticarToken } = require('../middleware/authMiddleware');
 
 // Rotas públicas (sem autenticação)
-router.post('/registrar', registrarUsuario);
+router.post('/cadastrar', cadastrarUsuario);
 router.post('/login', loginUsuario);
 
 // Rotas protegidas (com autenticação)

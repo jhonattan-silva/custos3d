@@ -18,7 +18,7 @@ function App() {
             
             {/* Rotas públicas */}
             <Route path="/login" element={<Login />} />
-            <Route path="/Cadastro" element={<Cadastro />} />
+            <Route path="/cadastro" element={<Cadastro />} />
             
             {/* Rotas protegidas */}
             <Route 

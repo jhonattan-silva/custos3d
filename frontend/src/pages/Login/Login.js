@@ -91,7 +91,7 @@ const Login = () => {
         <div className={style['auth-footer']}>
           <p>
             Não tem uma conta?{' '}
-            <Link to="/registro" className={style['auth-link']}>
+            <Link to="/cadastro" className={style['auth-link']}>
               Registre-se aqui
             </Link>
           </p>

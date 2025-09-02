@@ -43,9 +43,9 @@ api.interceptors.response.use(
 
 // Serviços de usuário
 export const usuarioService = {
-  // Registrar usuário
-  registrar: async (dados) => {
-    const response = await api.post('/api/usuarios/registrar', dados);
+  // cadastrar usuário
+  cadastrar: async (dados) => {
+    const response = await api.post('/api/usuarios/cadastrar', dados);
     return response.data;
   },
 

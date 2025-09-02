@@ -59,10 +59,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Registro
-  const registrar = async (email, senha) => {
+  // cadastro
+  const cadastrar = async (email, senha) => {
     try {
-      const resposta = await usuarioService.registrar({ email, senha });
+      const resposta = await usuarioService.cadastrar({ email, senha });
       
       // Salvar dados no localStorage
       localStorage.setItem('token', resposta.token);
@@ -74,7 +74,7 @@ export const AuthProvider = ({ children }) => {
       
       return { sucesso: true, usuario: resposta.usuario };
     } catch (error) {
-      const mensagem = error.response?.data?.erro || 'Erro ao registrar usuário';
+      const mensagem = error.response?.data?.erro || 'Erro ao cadastrar usuário';
       return { sucesso: false, erro: mensagem };
     }
   };
@@ -115,7 +115,7 @@ export const AuthProvider = ({ children }) => {
     token,
     carregando,
     login,
-    registrar,
+    cadastrar,
     logout,
     atualizarPerfil,
     estaLogado,

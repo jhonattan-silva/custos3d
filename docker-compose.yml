@@ -71,7 +71,7 @@ services:
     container_name: precificacao_prisma_studio
     restart: unless-stopped
     environment:
-      DATABASE_URL: "mysql://dev_user:dev_password@mysql:3306/precificacao_3d"
+      DATABASE_URL: "mysql://root:${MYSQL_ROOT_PASSWORD}@mysql:3306/precificacao_3d"
     ports:
       - "5555:5555"
     volumes:
@@ -82,8 +82,6 @@ services:
     networks:
       - precificacao_network
     command: sh -c "sleep 15 && npx prisma studio --hostname 0.0.0.0"
-    profiles:
-      - studio
 
 volumes:
   mysql_data:

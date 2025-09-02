@@ -7,8 +7,8 @@ const gerarToken = (usuarioId) => {
   return jwt.sign({ usuarioId }, process.env.JWT_SECRET, { expiresIn: '7d' });
 };
 
-// Registrar novo usuário
-const registrarUsuario = async (req, res) => {
+// Cadastrar novo usuário
+const cadastrarUsuario = async (req, res) => {
   try {
     const { email, senha, provedorOauth, idProvedorOauth } = req.body;
 
@@ -72,7 +72,7 @@ const registrarUsuario = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Erro ao registrar usuário:', error);
+    console.error('Erro ao cadastrar usuário:', error);
     res.status(500).json({ 
       erro: 'Erro interno do servidor' 
     });
@@ -234,7 +234,7 @@ const atualizarPerfil = async (req, res) => {
 };
 
 module.exports = {
-  registrarUsuario,
+  cadastrarUsuario,
   loginUsuario,
   obterPerfil,
   atualizarPerfil
