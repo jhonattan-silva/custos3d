@@ -4,6 +4,7 @@ import RotaProtegida from './components/RotaProtegida';
 import Login from './pages/Login/Login';
 import Cadastro from './pages/Cadastro/Cadastro';
 import Dashboard from './pages/Dashboard/Dashboard';
+import Planilha from './pages/Planilha/Planilha';
 import { AuthProvider } from './contexts/AuthContext'; 
 import './App.css';
 
@@ -30,15 +31,12 @@ function App() {
               } 
             />
             
-            {/* Rota para planilha específica (será criada depois) */}
+            {/* Rota para planilha específica */}
             <Route 
               path="/planilha/:id" 
               element={
                 <RotaProtegida>
-                  <div style={{ padding: '20px', textAlign: 'center' }}>
-                    <h2>Editor de Planilha</h2>
-                    <p>Em desenvolvimento...</p>
-                  </div>
+                  <Planilha />
                 </RotaProtegida>
               } 
             />
