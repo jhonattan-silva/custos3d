@@ -1,12 +1,76 @@
+/*
+ * ROUTES CONFIGURATION
+ * 
+ * Função: Configuração central de rotas da aplicação
+ * Define navegação e proteção de páginas
+ * 
+ * Rotas disponíveis:
+ * - / : Página inicial (redireciona conforme autenticação)
+ * - /login : Página de login/cadastro
+ * - /dashboard : Dashboard principal (protegido)
+ * - /planilha/:id : Edição de planilha (protegido)
+ * - /master : Painel administrativo (restrito a admins)
+ * 
+ * Proteções:
+ * - PrivateRoute: Requer autenticação
+ * - MasterRoute: Requer role master/admin
+ * 
+ * Redirecionamentos:
+ * - Usuário logado em /login → /dashboard
+ * - Usuário não logado em rotas protegidas → /login
+ * - Usuário sem permissão em /master → /dashboard
+ */
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import RotaProtegida from './components/RotaProtegida';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+
+// Páginas
 import Login from './pages/Login/Login';
-import Cadastro from './pages/Cadastro/Cadastro';
 import Dashboard from './pages/Dashboard/Dashboard';
 import Planilha from './pages/Planilha/Planilha';
-import { AuthProvider } from './contexts/AuthContext'; 
-import './App.css';
+import Master from './pages/Master/Master';
+
+// Componente para rotas protegidas
+const PrivateRoute = ({ children }) => {
+  const { usuario, carregando } = useAuth();
+  
+  if (carregando) {
+    return <div>Carregando...</div>;
+  }
+  
+  return usuario ? children : <Navigate to="/login" />;
+};
+
+// Componente para rotas master
+const MasterRoute = ({ children }) => {
+  const { usuario, carregando } = useAuth();
+  
+  if (carregando) {
+    return <div>Carregando...</div>;
+  }
+  
+  if (!usuario) {
+    return <Navigate to="/login" />;
+  }
+  
+  if (usuario.role !== 'master' && usuario.role !== 'admin') {
+    return <Navigate to="/dashboard" />;
+  }
+  
+  return children;
+};
+
+// Componente para rotas públicas (evita acesso se já logado)
+const PublicRoute = ({ children }) => {
+  const { usuario, carregando } = useAuth();
+  
+  if (carregando) {
+    return <div>Carregando...</div>;
+  }
+  
+  return usuario ? <Navigate to="/dashboard" /> : children;
+};
 
 function App() {
   return (
@@ -14,57 +78,70 @@ function App() {
       <Router>
         <div className="App">
           <Routes>
-            {/* Rota raiz redireciona para dashboard */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            
-            {/* Rotas públicas */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/cadastro" element={<Cadastro />} />
-            
-            {/* Rotas protegidas */}
+            {/* Rota inicial */}
             <Route 
-              path="/dashboard" 
+              path="/" 
               element={
-                <RotaProtegida>
-                  <Dashboard />
-                </RotaProtegida>
+                <PrivateRoute>
+                  <Navigate to="/dashboard" />
+                </PrivateRoute>
               } 
             />
             
-            {/* Rota para planilha específica */}
+            {/* Rota de login */}
+            <Route 
+              path="/login" 
+              element={
+                <PublicRoute>
+                  <Login />
+                </PublicRoute>
+              } 
+            />
+            
+            {/* Rota de cadastro */}
+            <Route 
+              path="/cadastro" 
+              element={
+                <PublicRoute>
+                  <Login />
+                </PublicRoute>
+              } 
+            />
+            
+            {/* Dashboard principal */}
+            <Route 
+              path="/dashboard" 
+              element={
+                <PrivateRoute>
+                  <Dashboard />
+                </PrivateRoute>
+              } 
+            />
+            
+            {/* Edição de planilha */}
             <Route 
               path="/planilha/:id" 
               element={
-                <RotaProtegida>
+                <PrivateRoute>
                   <Planilha />
-                </RotaProtegida>
+                </PrivateRoute>
+              } 
+            />
+            
+            {/* Painel Master */}
+            <Route 
+              path="/master" 
+              element={
+                <MasterRoute>
+                  <Master />
+                </MasterRoute>
               } 
             />
             
             {/* Rota 404 */}
             <Route 
               path="*" 
-              element={
-                <div style={{ 
-                  padding: '50px', 
-                  textAlign: 'center',
-                  minHeight: '100vh',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'center',
-                  alignItems: 'center'
-                }}>
-                  <h1>404 - Página não encontrada</h1>
-                  <p>A página que você está procurando não existe.</p>
-                  <a href="/dashboard" style={{ 
-                    color: '#667eea', 
-                    textDecoration: 'none',
-                    fontWeight: '600'
-                  }}>
-                    Voltar ao Dashboard
-                  </a>
-                </div>
-              } 
+              element={<Navigate to="/dashboard" />} 
             />
           </Routes>
         </div>

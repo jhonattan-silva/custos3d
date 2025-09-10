@@ -1,16 +1,14 @@
-version: '3.8'
-
 services:
   # Banco de dados MySQL
   mysql:
     image: mysql:8.0
     container_name: precificacao_mysql
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ALLOW_EMPTY_PASSWORD: "no"
+      MYSQL_RANDOM_ROOT_PASSWORD: "no"
     ports:
       - "3306:3306"
     volumes:
@@ -18,6 +16,10 @@ services:
       - ./mysql-init:/docker-entrypoint-initdb.d
     networks:
       - precificacao_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
 
   # Backend Node.js
   backend:
@@ -34,11 +36,10 @@ services:
       - ./backend:/app
       - /app/node_modules
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
     networks:
       - precificacao_network
-    command: sh -c "sleep 20 && npx prisma migrate deploy && npm run dev"
-
 
   # Frontend React
   frontend:
@@ -63,25 +64,26 @@ services:
     stdin_open: true
     tty: true
 
-  # Prisma Studio (opcional, para visualizar dados)
+  # Prisma Studio
   prisma-studio:
     build: 
       context: ./backend
       dockerfile: Dockerfile
     container_name: precificacao_prisma_studio
     restart: unless-stopped
-    environment:
-      DATABASE_URL: "mysql://root:${MYSQL_ROOT_PASSWORD}@mysql:3306/precificacao_3d"
+    env_file:
+      - ./backend/.env
     ports:
       - "5555:5555"
     volumes:
-      - ./backend/prisma:/app/prisma
-      - ./backend/src:/app/src
+      - ./backend:/app
+      - /app/node_modules
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
     networks:
       - precificacao_network
-    command: sh -c "sleep 15 && npx prisma studio --hostname 0.0.0.0"
+    command: sh -c "sleep 30 && npx prisma generate && npx prisma studio --hostname 0.0.0.0"
 
 volumes:
   mysql_data:

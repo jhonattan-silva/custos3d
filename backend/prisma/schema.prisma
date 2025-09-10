@@ -13,15 +13,22 @@ datasource db {
 // Modelo de usuários
 model Usuario {
   id                  Int         @id @default(autoincrement())
+  nome                String?
   email               String?     @unique
   senha               String?
   provedorOauth       String?     @map("provedor_oauth")
   idProvedorOauth     String?     @map("id_provedor_oauth")
   tipoPlano           String      @default("gratuito") @map("tipo_plano")
+  status              String      @default("ativo")
+  roleId              Int         @default(1) @map("role_id")
+  ultimoLogin         DateTime?   @map("ultimo_login")
   criadoEm            DateTime    @default(now()) @map("criado_em")
   atualizadoEm        DateTime    @updatedAt @map("atualizado_em")
   
-  // Relacionamento com planilhas
+  // Relacionamento com role
+  role                Role        @relation(fields: [roleId], references: [id])
+  
+  // Relacionamentos existentes
   planilhas           Planilha[]
   maquinas            Maquina[]
   materiais           Material[]
@@ -29,6 +36,51 @@ model Usuario {
   projetos            Projeto[]
   
   @@map("usuarios")
+}
+
+// Modelo de roles (novo)
+model Role {
+  id              Int      @id @default(autoincrement())
+  nome            String   @unique
+  descricao       String?
+  ativo           Boolean  @default(true)
+  criadoEm        DateTime @default(now()) @map("criado_em")
+  
+  // Relacionamentos
+  usuarios        Usuario[]
+  rolePermissoes  RolePermissao[]
+  
+  @@map("roles")
+}
+
+// Modelo de permissões (novo)
+model Permissao {
+  id              Int      @id @default(autoincrement())
+  nome            String   @unique
+  descricao       String?
+  modulo          String
+  acao            String
+  criadoEm        DateTime @default(now()) @map("criado_em")
+  
+  // Relacionamentos
+  rolePermissoes  RolePermissao[]
+  
+  @@map("permissoes")
+}
+
+// Modelo de relacionamento role-permissões (novo)
+model RolePermissao {
+  id            Int      @id @default(autoincrement())
+  roleId        Int      @map("role_id")
+  permissaoId   Int      @map("permissao_id")
+  criadoEm      DateTime @default(now()) @map("criado_em")
+  
+  // Relacionamentos
+  role          Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permissao     Permissao @relation(fields: [permissaoId], references: [id], onDelete: Cascade)
+  
+  @@unique([roleId, permissaoId])
+  @@map("role_permissoes")
 }
 
 // Modelo de planilhas

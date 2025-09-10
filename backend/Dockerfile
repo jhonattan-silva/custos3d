@@ -19,6 +19,6 @@ RUN npx prisma generate
 # Expor porta
 EXPOSE 3001
 
-# Comando para desenvolvimento (com nodemon)
-CMD ["npm", "run", "dev"]
+# Comando para desenvolvimento
+CMD ["sh", "-c", "sleep 15 && npx prisma generate && npx prisma db push && npm run dev"]
 

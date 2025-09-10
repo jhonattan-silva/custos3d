@@ -1,3 +1,42 @@
+/*
+ * Função: Página principal de edição de planilhas de precificação 3D
+ * Permite visualizar, editar e calcular custos de itens para impressão 3D
+ * 
+ * Funcionalidades:
+ * - Carregamento de dados da planilha do backend
+ * - Tabela editável com cálculos automáticos
+ * - Adição/remoção de itens da planilha
+ * - Sidebar para configuração de parâmetros
+ * - Salvamento automático no backend
+ * - Cálculos em tempo real de custos
+ * 
+ * Estados principais:
+ * - planilha: Dados da planilha (nome, configurações)
+ * - dados: Array com todos os itens/linhas
+ * - carregando: Flag de loading inicial
+ * - salvando: Flag durante salvamento
+ * - erro: Mensagens de erro/sucesso
+ * - sidebarAberto: Controle do sidebar de configurações
+ * 
+ * Funções principais:
+ * - carregarPlanilha: Busca dados do backend
+ * - salvarPlanilha: Persiste alterações
+ * - adicionarItem: Cria nova linha na tabela
+ * - atualizarItem: Modifica item existente
+ * - removerItem: Remove item da planilha
+ * - calcularCustos: Calcula preços automaticamente
+ * - salvarConfiguracoes: Atualiza parâmetros do sidebar
+ * 
+ * Parâmetros de URL:
+ * - id: ID da planilha a ser carregada
+ * 
+ * Cálculos implementados:
+ * - Custo Material = (peso/1000) * custoKgFilamento
+ * - Custo Energia = tempo * custoEnergia * (potencia/1000)
+ * - Custo Trabalho = (tempo * 0.2) * custoHora
+ * - Preço Final = custoTotal * (1 + margemLucro/100)
+ */
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -47,8 +86,9 @@ const Planilha = () => {
           material: 'PLA',
           peso: 0,
           tempoImpressao: 0,
-          suporte: 'Não',
-          complexidade: 'Média',
+          itensAdicionais: 0,
+          embalagem: 0,
+          taxaMarketplace: 0,
           custoMaterial: '0.00',
           custoEnergia: '0.00',
           custoTrabalho: '0.00',
@@ -88,8 +128,9 @@ const Planilha = () => {
           material: 'PLA',
           peso: 0,
           tempoImpressao: 0,
-          suporte: 'Não',
-          complexidade: 'Média',
+          itensAdicionais: 0,
+          embalagem: 0,
+          taxaMarketplace: 0,
           custoMaterial: '0.00',
           custoEnergia: '0.00',
           custoTrabalho: '0.00',
@@ -198,8 +239,9 @@ const Planilha = () => {
       material: 'PLA',
       peso: 0,
       tempoImpressao: 0,
-      suporte: 'Não',
-      complexidade: 'Média',
+      itensAdicionais: 0,
+      embalagem: 0,
+      taxaMarketplace: 0,
       custoMaterial: '0.00',
       custoEnergia: '0.00',
       custoTrabalho: '0.00',
@@ -323,8 +365,9 @@ const Planilha = () => {
                 <th>Material</th>
                 <th>Peso (g)</th>
                 <th>Tempo (h)</th>
-                <th>Suporte</th>
-                <th>Complexidade</th>
+                <th>Itens Adicionais</th>
+                <th>Embalagem</th>
+                <th>Taxa Marketplace (%)</th>
                 <th>Custo Material</th>
                 <th>Custo Energia</th>
                 <th>Custo Trabalho</th>
@@ -382,28 +425,37 @@ const Planilha = () => {
                     />
                   </td>
                   <td>
-                    <ListaSuspensa
-                      valor={item.suporte}
-                      onChange={(valor) => atualizarItem(index, 'suporte', valor)}
-                      opcoes={[
-                        { valor: 'Sim', texto: '✅ Sim' },
-                        { valor: 'Não', texto: '❌ Não' }
-                      ]}
-                      placeholder="Suporte"
-                      tamanho="small"
+                    <input
+                      type="number"
+                      value={item.itensAdicionais || ''}
+                      onChange={(e) => atualizarItem(index, 'itensAdicionais', parseFloat(e.target.value) || 0)}
+                      className={styles.cellInputNumber}
+                      step="0.01"
+                      min="0"
+                      placeholder="5.00"
                     />
                   </td>
                   <td>
-                    <ListaSuspensa
-                      valor={item.complexidade}
-                      onChange={(valor) => atualizarItem(index, 'complexidade', valor)}
-                      opcoes={[
-                        { valor: 'Baixa', texto: '🟢 Baixa' },
-                        { valor: 'Média', texto: '🟡 Média' },
-                        { valor: 'Alta', texto: '🔴 Alta' }
-                      ]}
-                      placeholder="Complexidade"
-                      tamanho="small"
+                    <input
+                      type="number"
+                      value={item.embalagem || ''}
+                      onChange={(e) => atualizarItem(index, 'embalagem', parseFloat(e.target.value) || 0)}
+                      className={styles.cellInputNumber}
+                      step="0.01"
+                      min="0"
+                      placeholder="2.50"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      value={item.taxaMarketplace || ''}
+                      onChange={(e) => atualizarItem(index, 'taxaMarketplace', parseFloat(e.target.value) || 0)}
+                      className={styles.cellInputNumber}
+                      step="0.1"
+                      min="0"
+                      max="100"
+                      placeholder="15.0"
                     />
                   </td>
                   <td className={styles.calculatedCell}>
@@ -432,13 +484,6 @@ const Planilha = () => {
               ))}
             </tbody>
           </table>
-
-          {/* Dica para o usuário */}
-          {dados.length === 1 && !dados[0].item && (
-            <div className={styles.tableHint}>
-              <p>💡 <strong>Dica:</strong> Comece digitando o nome do item na primeira linha e preencha os dados de peso e tempo para ver os cálculos automáticos!</p>
-            </div>
-          )}
         </div>
 
         {/* Informações de desenvolvimento */}

@@ -27,7 +27,7 @@ app.use(cors());
 const usuariosRoutes = require('./routes/usuariosRoutes');
 app.use('/api/usuarios', usuariosRoutes);
 
-// Remova todos os middlewares e rotas customizadas
+// Rota de teste 
 app.get('/', (req, res) => {
   res.json({ message: 'API funcionando!' });
 });

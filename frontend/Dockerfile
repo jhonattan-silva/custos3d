@@ -4,11 +4,11 @@ FROM node:18-alpine
 # Definir diretório de trabalho
 WORKDIR /app
 
-# Copiar arquivos de dependências
+# Copiar arquivos de dependências primeiro (cache otimizado)
 COPY package*.json ./
 
-# Instalar dependências
-RUN npm install
+# Limpar cache npm e instalar dependências
+RUN npm cache clean --force && npm install
 
 # Copiar código fonte
 COPY . .
@@ -16,6 +16,6 @@ COPY . .
 # Expor porta
 EXPOSE 3000
 
-# Comando para desenvolvimento (com hot reload)
+# Comando para desenvolvimento
 CMD ["npm", "start"]
 
