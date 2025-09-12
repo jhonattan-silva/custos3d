@@ -38,10 +38,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { masterService } from '../../services/masterApi';
-import Modal from '../../components/Modal/Modal';
 import Botao from '../../components/Botao/Botao';
 import CampoForm from '../../components/CampoForm/CampoForm';
-import ListaSuspensa from '../../components/ListaSuspensa/ListaSuspensa';
 import styles from './Master.module.css';
 
 const Master = () => {
@@ -59,13 +57,6 @@ const Master = () => {
   const [metricas, setMetricas] = useState({});
   const [parametros, setParametros] = useState({});
   const [formulas, setFormulas] = useState({});
-  const [planos, setPlanos] = useState({});
-
-  // Estados de modais
-  const [modalUsuario, setModalUsuario] = useState(false);
-  const [modalFormula, setModalFormula] = useState(false);
-  const [modalPlano, setModalPlano] = useState(false);
-  const [usuarioEditando, setUsuarioEditando] = useState(null);
 
   // Verificar se usuário tem permissão
   useEffect(() => {
@@ -87,13 +78,11 @@ const Master = () => {
         usuariosResponse, 
         parametrosResponse,
         formulasResponse,
-        planosResponse
       ] = await Promise.all([
         masterService.obterMetricas().catch(() => null),
         masterService.listarUsuarios({ limit: 10 }).catch(() => null),
         masterService.obterParametros().catch(() => null),
         masterService.obterFormulas().catch(() => null),
-        masterService.obterPlanos().catch(() => null)
       ]);
 
       // Se conseguiu carregar do backend, usa os dados reais
@@ -101,7 +90,6 @@ const Master = () => {
       if (usuariosResponse) setUsuarios(usuariosResponse.usuarios || []);
       if (parametrosResponse) setParametros(parametrosResponse);
       if (formulasResponse) setFormulas(formulasResponse);
-      if (planosResponse) setPlanos(planosResponse);
 
       // Se não conseguiu carregar, mantém dados de desenvolvimento
       if (!metricasResponse) {
@@ -232,7 +220,7 @@ const Master = () => {
     <div className={styles.usuarios}>
       <div className={styles.sectionHeader}>
         <h3>👥 Gerenciamento de Usuários</h3>
-        <Botao onClick={() => setModalUsuario(true)}>
+        <Botao onClick={() => console.log('Implementar modal de usuário')}>
           ➕ Novo Usuário
         </Botao>
       </div>
@@ -269,10 +257,7 @@ const Master = () => {
                 <td>{user.ultimo_login ? new Date(user.ultimo_login).toLocaleDateString('pt-BR') : 'Nunca'}</td>
                 <td>
                   <button 
-                    onClick={() => {
-                      setUsuarioEditando(user);
-                      setModalUsuario(true);
-                    }}
+                    onClick={() => console.log('Editar usuário:', user.id)}
                     className={styles.btnEditar}
                   >
                     ✏️
@@ -291,7 +276,7 @@ const Master = () => {
     <div className={styles.formulas}>
       <div className={styles.sectionHeader}>
         <h3>🧮 Configuração de Fórmulas</h3>
-        <Botao onClick={() => setModalFormula(true)}>
+        <Botao onClick={() => console.log('Implementar modal de fórmula')}>
           ➕ Nova Fórmula
         </Botao>
       </div>

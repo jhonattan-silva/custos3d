@@ -26,12 +26,16 @@ const criarPlanilha = async (req, res) => {
   try {
     const planilha = await planilhaService.criarPlanilha(req.usuarioId, req.body);
     res.status(201).json({
+      sucesso: true,
       mensagem: 'Planilha criada com sucesso',
       planilha
     });
   } catch (error) {
     console.error('Erro ao criar planilha:', error);
-    res.status(400).json({ erro: error.message });
+    res.status(400).json({ 
+      sucesso: false,
+      erro: error.message 
+    });
   }
 };
 
@@ -42,7 +46,10 @@ const listarPlanilhas = async (req, res) => {
     res.json(planilhas);
   } catch (error) {
     console.error('Erro ao listar planilhas:', error);
-    res.status(500).json({ erro: 'Erro interno do servidor' });
+    res.status(500).json({ 
+      sucesso: false,
+      erro: 'Erro interno do servidor' 
+    });
   }
 };
 
@@ -54,7 +61,10 @@ const obterPlanilha = async (req, res) => {
   } catch (error) {
     console.error('Erro ao obter planilha:', error);
     const status = error.message === 'Planilha não encontrada' ? 404 : 500;
-    res.status(status).json({ erro: error.message });
+    res.status(status).json({ 
+      sucesso: false,
+      erro: error.message 
+    });
   }
 };
 
@@ -63,13 +73,17 @@ const atualizarPlanilha = async (req, res) => {
   try {
     const planilha = await planilhaService.atualizarPlanilha(req.params.id, req.usuarioId, req.body);
     res.json({
+      sucesso: true,
       mensagem: 'Planilha atualizada com sucesso',
       planilha
     });
   } catch (error) {
     console.error('Erro ao atualizar planilha:', error);
     const status = error.message === 'Planilha não encontrada' ? 404 : 400;
-    res.status(status).json({ erro: error.message });
+    res.status(status).json({ 
+      sucesso: false,
+      erro: error.message 
+    });
   }
 };
 
@@ -78,12 +92,16 @@ const excluirPlanilha = async (req, res) => {
   try {
     await planilhaService.excluirPlanilha(req.params.id, req.usuarioId);
     res.json({
+      sucesso: true,
       mensagem: 'Planilha excluída com sucesso'
     });
   } catch (error) {
     console.error('Erro ao excluir planilha:', error);
     const status = error.message === 'Planilha não encontrada' ? 404 : 500;
-    res.status(status).json({ erro: error.message });
+    res.status(status).json({ 
+      sucesso: false,
+      erro: error.message 
+    });
   }
 };
 
@@ -91,10 +109,16 @@ const excluirPlanilha = async (req, res) => {
 const obterLimitesPlano = async (req, res) => {
   try {
     const limites = await planilhaService.obterLimitesPlano(req.usuarioId);
-    res.json(limites);
+    res.json({
+      sucesso: true,
+      ...limites
+    });
   } catch (error) {
     console.error('Erro ao obter limites do plano:', error);
-    res.status(500).json({ erro: 'Erro interno do servidor' });
+    res.status(500).json({ 
+      sucesso: false,
+      erro: 'Erro interno do servidor' 
+    });
   }
 };
 

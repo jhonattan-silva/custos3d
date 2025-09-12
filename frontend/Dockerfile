@@ -4,7 +4,7 @@ FROM node:18-alpine
 # Definir diretório de trabalho
 WORKDIR /app
 
-# Copiar arquivos de dependências primeiro (cache otimizado)
+# Copiar package.json e package-lock.json
 COPY package*.json ./
 
 # Limpar cache npm e instalar dependências

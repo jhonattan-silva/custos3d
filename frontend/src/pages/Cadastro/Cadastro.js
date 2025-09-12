@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import style from './Cadastro.module.css';
 
 const Cadastro = () => {
+  const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
@@ -19,7 +20,7 @@ const Cadastro = () => {
     setCarregando(true);
 
     // Validações básicas
-    if (!email || !senha || !confirmarSenha) {
+    if (!nome || !email || !senha || !confirmarSenha) {
       setErro('Por favor, preencha todos os campos');
       setCarregando(false);
       return;
@@ -38,7 +39,7 @@ const Cadastro = () => {
     }
 
     try {
-      const resultado = await cadastrar(email, senha);
+      const resultado = await cadastrar(nome, email, senha);
 
       if (resultado.sucesso) {
         navigate('/dashboard');
@@ -78,6 +79,18 @@ const Cadastro = () => {
               {erro}
             </div>
           )}
+
+          <div className={style['form-group']}>
+            <label htmlFor="nome">Nome completo</label>
+            <input
+              type="text"
+              id="nome"
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+              placeholder="Seu nome completo"
+              required
+            />
+          </div>
 
           <div className={style['form-group']}>
             <label htmlFor="email">Email</label>

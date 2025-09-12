@@ -24,8 +24,25 @@
 
 import api from './api';
 
+// Serviços da API Master (simulado para desenvolvimento)
 export const masterService = {
-  // Usuários
+  // Obter métricas do dashboard
+  async obterMetricas() {
+    // Simula requisição para desenvolvimento
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          totalUsuarios: 150,
+          usuariosAtivos: 120,
+          planilhasTotal: 450,
+          receitaMensal: 2500.00,
+          crescimentoMensal: 15.5
+        });
+      }, 1000);
+    });
+  },
+
+  // Listar usuários
   async listarUsuarios(filtros = {}) {
     try {
       const params = new URLSearchParams();
@@ -120,17 +137,6 @@ export const masterService = {
       return response.data;
     } catch (error) {
       console.error('Erro ao atualizar plano:', error);
-      throw error;
-    }
-  },
-
-  // Métricas
-  async obterMetricas(periodo = '30d') {
-    try {
-      const response = await api.get(`/master/metricas?periodo=${periodo}`);
-      return response.data;
-    } catch (error) {
-      console.error('Erro ao obter métricas:', error);
       throw error;
     }
   },

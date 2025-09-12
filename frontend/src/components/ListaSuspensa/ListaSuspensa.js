@@ -97,6 +97,9 @@ const ListaSuspensa = ({
           );
         }
         break;
+      default:
+        // Não faz nada para outras teclas
+        break;
     }
   };
 
@@ -150,6 +153,7 @@ const ListaSuspensa = ({
         role="combobox"
         aria-expanded={aberto}
         aria-haspopup="listbox"
+        aria-controls="dropdown-options"
       >
         <span className={styles.textoSelecionado}>
           {obterTextoExibicao()}
@@ -160,7 +164,7 @@ const ListaSuspensa = ({
       </div>
 
       {aberto && (
-        <div className={styles.dropdown} role="listbox">
+        <div className={styles.dropdown} role="listbox" id="dropdown-options">
           {opcoes.map((opcao, index) => {
             const valorOpcao = typeof opcao === 'string' ? opcao : opcao.valor;
             const textoOpcao = typeof opcao === 'string' ? opcao : opcao.texto;

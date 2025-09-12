@@ -1,24 +1,16 @@
 {
-  "name": "backend",
+  "name": "custos-3d-backend",
   "version": "1.0.0",
+  "description": "Backend para sistema de precificação 3D",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "db:generate": "npx prisma generate",
-    "db:migrate": "npx prisma migrate dev",
-    "db:studio": "npx prisma studio",
-    "docker:up": "docker-compose up -d",
-    "docker:down": "docker-compose down",
-    "docker:logs": "docker-compose logs -f backend",
-    "docker:shell": "docker-compose exec backend sh",
-    "test:api": "node utils/testesApi.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
   "dependencies": {
     "@prisma/client": "^6.14.0",
     "axios": "^1.11.0",
@@ -31,6 +23,15 @@
     "helmet": "^7.0.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
-  }
+    "nodemon": "^3.0.1",
+    "prisma": "^5.6.0"
+  },
+  "keywords": [
+    "api",
+    "express",
+    "prisma",
+    "jwt"
+  ],
+  "author": "Jhonattan Silva",
+  "license": "MIT"
 }

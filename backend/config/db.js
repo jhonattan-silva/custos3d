@@ -1,30 +1,66 @@
 const { PrismaClient } = require('@prisma/client');
 
-// Instância única do Prisma Client
-const prisma = new PrismaClient({
-  log: ['query', 'info', 'warn', 'error'], // Logs para desenvolvimento
-});
+let prisma;
 
-// Função para conectar ao banco
-async function conectarBanco() {
+const conectarBanco = async () => {
   try {
-    await prisma.$connect();
-    console.log('✅ Yahooo! Conectado ao Banco!');
+    if (!prisma) {
+      console.log('🔌 Conectando ao banco de dados...');
+      prisma = new PrismaClient({
+        log: ['info', 'warn', 'error'],
+        errorFormat: 'pretty',
+      });
+      
+      // Tentar conectar com retry
+      let tentativas = 5;
+      while (tentativas > 0) {
+        try {
+          await prisma.$connect();
+          console.log('✅ Conectado ao banco de dados');
+          break;
+        } catch (error) {
+          tentativas--;
+          console.log(`❌ Tentativa de conexão falhou. Tentativas restantes: ${tentativas}`);
+          if (tentativas === 0) {
+            throw error;
+          }
+          await new Promise(resolve => setTimeout(resolve, 5000));
+        }
+      }
+    }
+    return prisma;
   } catch (error) {
-    console.error('❌ Erro ao conectar ao banco de dados:', error);
-    process.exit(1);
+    console.error('❌ Erro ao conectar com o banco:', error);
+    throw error;
   }
-}
+};
 
-// Função para desconectar do banco
-async function desconectarBanco() {
-  await prisma.$disconnect();
-  console.log('🔌 Desconectado do banco de dados');
-}
+const desconectarBanco = async () => {
+  try {
+    if (prisma) {
+      await prisma.$disconnect();
+      console.log('🔌 Desconectado do banco de dados');
+    }
+  } catch (error) {
+    console.error('❌ Erro ao desconectar do banco:', error);
+  }
+};
+
+// Função para obter a instância do prisma
+const obterPrisma = () => {
+  if (!prisma) {
+    prisma = new PrismaClient({
+      log: ['info', 'warn', 'error'],
+      errorFormat: 'pretty',
+    });
+  }
+  return prisma;
+};
 
 module.exports = {
-  prisma,
+  prisma: obterPrisma(),
   conectarBanco,
-  desconectarBanco
+  desconectarBanco,
+  obterPrisma
 };
 

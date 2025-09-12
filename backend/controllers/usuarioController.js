@@ -1,80 +1,53 @@
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const { prisma } = require('../config/db');
+/*
+ * Função: Controlador responsável por gerenciar as operações de usuários
+ * 
+ * Funções:
+ * - cadastrarUsuario: Registra novo usuário no sistema
+ * - loginUsuario: Autentica usuário existente
+ * - obterPerfil: Obtém perfil completo do usuário
+ * - atualizarPerfil: Atualiza dados do perfil do usuário
+ * 
+ * Parâmetros de entrada:
+ * - req.usuarioId: ID do usuário autenticado (vem do middleware)
+ * - req.body: Dados do usuário (nome, email, senha, etc.)
+ * 
+ * Retornos:
+ * - JSON com dados do usuário ou mensagens de sucesso/erro
+ * - Status codes apropriados (200, 201, 400, 401, 404, 500)
+ */
 
-// Gerar token JWT
-const gerarToken = (usuarioId) => {
-  return jwt.sign({ usuarioId }, process.env.JWT_SECRET, { expiresIn: '7d' });
-};
+const usuarioService = require('../services/usuarioService');
 
 // Cadastrar novo usuário
 const cadastrarUsuario = async (req, res) => {
   try {
-    const { email, senha, provedorOauth, idProvedorOauth } = req.body;
-
-    // Validar dados obrigatórios
-    if (!email && !provedorOauth) {
-      return res.status(400).json({ 
-        erro: 'Email ou provedor OAuth é obrigatório' 
-      });
-    }
-
-    // Verificar se usuário já existe
-    let usuarioExistente = null;
-    if (email) {
-      usuarioExistente = await prisma.usuario.findUnique({
-        where: { email }
-      });
-    }
+    console.log('� Tentativa de cadastro:', { email: req.body.email });
     
-    if (provedorOauth && idProvedorOauth) {
-      usuarioExistente = await prisma.usuario.findFirst({
-        where: {
-          provedorOauth,
-          idProvedorOauth
-        }
-      });
-    }
+    const resultado = await usuarioService.criarUsuario(req.body);
 
-    if (usuarioExistente) {
-      return res.status(400).json({ 
-        erro: 'Usuário já existe' 
-      });
-    }
-
-    // Hash da senha (se fornecida)
-    let senhaHash = null;
-    if (senha) {
-      senhaHash = await bcrypt.hash(senha, 12);
-    }
-
-    // Criar usuário
-    const novoUsuario = await prisma.usuario.create({
-      data: {
-        email,
-        senha: senhaHash,
-        provedorOauth,
-        idProvedorOauth,
-        tipoPlano: 'gratuito'
-      }
-    });
-
-    // Gerar token
-    const token = gerarToken(novoUsuario.id);
-
-    // Remover senha da resposta
-    const { senha: _, ...usuarioSemSenha } = novoUsuario;
+    console.log('✅ Usuário criado com sucesso:', resultado.usuario.id);
 
     res.status(201).json({
+      sucesso: true,
       mensagem: 'Usuário criado com sucesso',
-      usuario: usuarioSemSenha,
-      token
+      ...resultado
     });
 
   } catch (error) {
-    console.error('Erro ao cadastrar usuário:', error);
-    res.status(500).json({ 
-      erro: 'Erro interno do servidor' 
+    console.error('❌ Erro ao cadastrar usuário:', error);
+    
+    // Determinar status code baseado no tipo de erro
+    let status = 500;
+    if (error.message.includes('obrigatório') || 
+        error.message.includes('formato') || 
+        error.message.includes('caracteres') ||
+        error.message.includes('já está em uso')) {
+      status = 400;
+    }
+
+    res.status(status).json({ 
+      sucesso: false,
+      erro: error.message
     });
   }
 };
@@ -82,68 +55,29 @@ const cadastrarUsuario = async (req, res) => {
 // Login de usuário
 const loginUsuario = async (req, res) => {
   try {
-    const { email, senha, provedorOauth, idProvedorOauth } = req.body;
-
-    let usuario = null;
-
-    // Login com email e senha
-    if (email && senha) {
-      usuario = await prisma.usuario.findUnique({
-        where: { email }
-      });
-
-      if (!usuario || !usuario.senha) {
-        return res.status(401).json({ 
-          erro: 'Credenciais inválidas' 
-        });
-      }
-
-      const senhaValida = await bcrypt.compare(senha, usuario.senha);
-      if (!senhaValida) {
-        return res.status(401).json({ 
-          erro: 'Credenciais inválidas' 
-        });
-      }
-    }
-
-    // Login com OAuth
-    if (provedorOauth && idProvedorOauth) {
-      usuario = await prisma.usuario.findFirst({
-        where: {
-          provedorOauth,
-          idProvedorOauth
-        }
-      });
-
-      if (!usuario) {
-        return res.status(401).json({ 
-          erro: 'Usuário não encontrado' 
-        });
-      }
-    }
-
-    if (!usuario) {
-      return res.status(400).json({ 
-        erro: 'Dados de login inválidos' 
-      });
-    }
-
-    // Gerar token
-    const token = gerarToken(usuario.id);
-
-    // Remover senha da resposta
-    const { senha: _, ...usuarioSemSenha } = usuario;
+    const resultado = await usuarioService.autenticarUsuario(req.body);
 
     res.json({
+      sucesso: true,
       mensagem: 'Login realizado com sucesso',
-      usuario: usuarioSemSenha,
-      token
+      ...resultado
     });
 
   } catch (error) {
     console.error('Erro ao fazer login:', error);
-    res.status(500).json({ 
-      erro: 'Erro interno do servidor' 
+    
+    // Determinar status baseado no tipo de erro
+    let status = 500;
+    if (error.message.includes('Credenciais inválidas') || 
+        error.message.includes('não encontrado')) {
+      status = 401;
+    } else if (error.message.includes('inválidos')) {
+      status = 400;
+    }
+
+    res.status(status).json({ 
+      sucesso: false,
+      erro: error.message
     });
   }
 };
@@ -151,35 +85,19 @@ const loginUsuario = async (req, res) => {
 // Obter perfil do usuário
 const obterPerfil = async (req, res) => {
   try {
-    const usuario = await prisma.usuario.findUnique({
-      where: { id: req.usuarioId },
-      include: {
-        planilhas: {
-          select: {
-            id: true,
-            nome: true,
-            criadaEm: true,
-            atualizadaEm: true
-          }
-        }
-      }
+    const usuario = await usuarioService.obterPerfilUsuario(req.usuarioId);
+
+    res.json({
+      sucesso: true,
+      usuario
     });
-
-    if (!usuario) {
-      return res.status(404).json({ 
-        erro: 'Usuário não encontrado' 
-      });
-    }
-
-    // Remover senha da resposta
-    const { senha: _, ...usuarioSemSenha } = usuario;
-
-    res.json(usuarioSemSenha);
 
   } catch (error) {
     console.error('Erro ao obter perfil:', error);
-    res.status(500).json({ 
-      erro: 'Erro interno do servidor' 
+    const status = error.message === 'Usuário não encontrado' ? 404 : 500;
+    res.status(status).json({ 
+      sucesso: false,
+      erro: error.message
     });
   }
 };
@@ -187,48 +105,26 @@ const obterPerfil = async (req, res) => {
 // Atualizar perfil do usuário
 const atualizarPerfil = async (req, res) => {
   try {
-    const { email, senha } = req.body;
-    const dadosAtualizacao = {};
-
-    if (email) {
-      // Verificar se email já está em uso
-      const emailExistente = await prisma.usuario.findFirst({
-        where: {
-          email,
-          id: { not: req.usuarioId }
-        }
-      });
-
-      if (emailExistente) {
-        return res.status(400).json({ 
-          erro: 'Email já está em uso' 
-        });
-      }
-
-      dadosAtualizacao.email = email;
-    }
-
-    if (senha) {
-      dadosAtualizacao.senha = await bcrypt.hash(senha, 12);
-    }
-
-    const usuarioAtualizado = await prisma.usuario.update({
-      where: { id: req.usuarioId },
-      data: dadosAtualizacao
-    });
-
-    // Remover senha da resposta
-    const { senha: _, ...usuarioSemSenha } = usuarioAtualizado;
+    const usuario = await usuarioService.atualizarPerfilUsuario(req.usuarioId, req.body);
 
     res.json({
+      sucesso: true,
       mensagem: 'Perfil atualizado com sucesso',
-      usuario: usuarioSemSenha
+      usuario
     });
 
   } catch (error) {
     console.error('Erro ao atualizar perfil:', error);
-    res.status(500).json({ 
-      erro: 'Erro interno do servidor' 
+    
+    let status = 500;
+    if (error.message.includes('já está em uso') || 
+        error.message.includes('caracteres')) {
+      status = 400;
+    }
+
+    res.status(status).json({ 
+      sucesso: false,
+      erro: error.message
     });
   }
 };

@@ -21,6 +21,51 @@ build:
 	docker-compose build --no-cache
 	docker-compose up -d
 
+# Rebuild completo (limpa volumes também)
+recriar:
+	@echo "🧹 Limpando ambiente..."
+	docker-compose down -v
+	docker volume prune -f
+	@echo "🔨 Reconstruindo imagens..."
+	docker-compose build --no-cache
+	@echo "🚀 Iniciando serviços..."
+	docker-compose up -d mysql
+	@echo "⏳ Aguardando MySQL inicializar..."
+	@timeout /t 30 /nobreak > nul
+	docker-compose up -d backend
+	@echo "⏳ Aguardando backend inicializar..."
+	@timeout /t 20 /nobreak > nul
+	docker-compose up -d frontend
+	@echo "✅ Todos os serviços iniciados!"
+	@echo "🔗 Frontend: http://localhost:3000"
+	@echo "🔗 Backend: http://localhost:3001"
+	@echo "📊 Para acessar o Prisma Studio: make studio"
+
+# Rebuild apenas o backend
+rebuild-backend:
+	docker-compose stop backend
+	docker-compose build --no-cache backend
+	docker-compose up -d backend
+
+# Rebuild apenas o frontend
+rebuild-frontend:
+	docker-compose stop frontend
+	docker-compose build --no-cache frontend
+	docker-compose up -d frontend
+
+# Debug: rebuild e acompanhar logs do backend
+debug-backend:
+	docker-compose down
+	docker-compose build --no-cache backend
+	docker-compose up -d mysql
+	@echo "⏳ Aguardando MySQL iniciar..."
+	@sleep 10
+	docker-compose up backend
+
+# Debug: acompanhar apenas logs do backend em tempo real
+watch-backend:
+	docker-compose logs -f backend
+
 # Ver logs de todos os serviços
 logs:
 	docker-compose logs -f
@@ -82,13 +127,37 @@ install-backend:
 install-frontend:
 	docker-compose exec frontend npm install
 
-# Comandos específicos para desenvolvimento
-dev-backend:
-	docker-compose up backend mysql -d
-
-dev-frontend:
-	docker-compose up frontend -d
-
-dev-full:
+# Comando mais simples para Windows
+start:
+	@echo "🚀 Iniciando todos os serviços..."
 	docker-compose up -d
+	@echo "✅ Serviços iniciados!"
+	@echo "🔗 Frontend: http://localhost:3000"
+	@echo "🔗 Backend: http://localhost:3001"
+	@echo "📊 Para acessar o Prisma Studio: make studio"
+
+# Inicialização passo a passo para Windows
+init-win:
+	@echo "🧹 Limpando ambiente..."
+	docker-compose down -v
+	docker volume prune -f
+	@echo "🔨 Reconstruindo imagens..."
+	docker-compose build --no-cache
+	@echo "🗄️ Iniciando MySQL..."
+	docker-compose up -d mysql
+	@echo "⏳ Aguarde 30 segundos e depois execute: make start-backend"
+
+# Iniciar backend após MySQL estar pronto
+start-backend:
+	@echo "🚀 Iniciando backend..."
+	docker-compose up -d backend
+	@echo "⏳ Aguarde 20 segundos e depois execute: make start-frontend"
+
+# Iniciar frontend após backend estar pronto  
+start-frontend:
+	@echo "🎨 Iniciando frontend..."
+	docker-compose up -d frontend
+	@echo "✅ Todos os serviços iniciados!"
+	@echo "🔗 Frontend: http://localhost:3000"
+	@echo "🔗 Backend: http://localhost:3001"
 

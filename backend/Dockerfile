@@ -1,10 +1,13 @@
 # Dockerfile para o backend Node.js
 FROM node:18-alpine
 
+# Instalar dependências do sistema
+RUN apk add --no-cache openssl netcat-openbsd
+
 # Definir diretório de trabalho
 WORKDIR /app
 
-# Copiar arquivos de dependências
+# Copiar package.json e package-lock.json
 COPY package*.json ./
 
 # Instalar dependências

@@ -13,9 +13,8 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./mysql-init:/docker-entrypoint-initdb.d
-    networks:
-      - precificacao_network
+      - ./mysql-init/init-user.sql:/docker-entrypoint-initdb.d/init-user.sql
+      - ./mysql-init/init-data.sql:/docker-entrypoint-initdb.d/init-data.sql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       timeout: 20s
@@ -23,7 +22,7 @@ services:
 
   # Backend Node.js
   backend:
-    build: 
+    build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: precificacao_backend
@@ -38,41 +37,52 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-    networks:
-      - precificacao_network
+    command: >
+      sh -c "
+        echo '🔄 Aguardando MySQL...' &&
+        sleep 5 &&
+        echo '📦 Instalando dependências...' &&
+        npm install &&
+        echo '🔧 Gerando cliente Prisma...' &&
+        npx prisma generate &&
+        echo '🗄️ Aplicando migrações...' &&
+        npx prisma db push &&
+        echo '🚀 Iniciando servidor...' &&
+        npm run dev
+      "
 
   # Frontend React
   frontend:
-    build: 
+    build:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: precificacao_frontend
     restart: unless-stopped
-    environment:
-      - REACT_APP_API_URL=http://localhost:3001
-      - CHOKIDAR_USEPOLLING=true
-      - WATCHPACK_POLLING=true
     ports:
       - "3000:3000"
+    environment:
+      REACT_APP_API_URL: http://localhost:3001
+      CHOKIDAR_USEPOLLING: "true"
     volumes:
       - ./frontend:/app
       - /app/node_modules
     depends_on:
       - backend
-    networks:
-      - precificacao_network
-    stdin_open: true
-    tty: true
+    command: >
+      sh -c "
+        echo '📦 Instalando dependências do frontend...' &&
+        npm install &&
+        echo '🎨 Iniciando aplicação React...' &&
+        npm start
+      "
 
   # Prisma Studio
   prisma-studio:
-    build: 
+    profiles: ["studio"]
+    build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: precificacao_prisma_studio
-    restart: unless-stopped
-    env_file:
-      - ./backend/.env
+    container_name: custos3d-studio
     ports:
       - "5555:5555"
     volumes:
@@ -81,13 +91,12 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-    networks:
-      - precificacao_network
-    command: sh -c "sleep 30 && npx prisma generate && npx prisma studio --hostname 0.0.0.0"
+    command: >
+      sh -c "
+        echo '🎯 Iniciando Prisma Studio...' &&
+        npx prisma generate &&
+        npx prisma studio --hostname 0.0.0.0
+      "
 
 volumes:
   mysql_data:
-
-networks:
-  precificacao_network:
-    driver: bridge

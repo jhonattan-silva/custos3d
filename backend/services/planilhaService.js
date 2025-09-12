@@ -77,7 +77,7 @@ class PlanilhaService {
     // Obter tipo de plano do usuário
     const usuario = await prisma.usuario.findUnique({
       where: { id: usuarioId },
-      select: { tipo_plano: true } // Corrigido para snake_case
+      select: { tipoPlano: true }
     });
 
     if (!usuario) {
@@ -100,7 +100,7 @@ class PlanilhaService {
 
     // Verificar limites do plano
     const verificacao = this.verificarLimites(
-      usuario.tipo_plano, // Corrigido para snake_case
+      usuario.tipoPlano,
       dadosBasePadrao, 
       colunasPersonalizadasPadrao
     );
@@ -112,10 +112,9 @@ class PlanilhaService {
     // Criar planilha com campos corretos
     return await prisma.planilha.create({
       data: {
-        id_usuario: usuarioId, // Corrigido para snake_case
+        usuarioId: usuarioId,
         nome: nome || 'Minha Planilha',
-        dados_base: dadosBasePadrao, // Corrigido para snake_case
-        colunas_personalizadas: colunasPersonalizadasPadrao // Corrigido para snake_case
+        dadosBase: dadosBasePadrao
       }
     });
   }
@@ -123,14 +122,14 @@ class PlanilhaService {
   // Listar planilhas do usuário
   async listarPlanilhas(usuarioId) {
     return await prisma.planilha.findMany({
-      where: { id_usuario: usuarioId }, // Corrigido para snake_case
+      where: { usuarioId: usuarioId },
       select: {
         id: true,
         nome: true,
-        criada_em: true, // Corrigido para snake_case
-        atualizada_em: true // Corrigido para snake_case
+        criadaEm: true,
+        atualizadaEm: true
       },
-      orderBy: { atualizada_em: 'desc' }
+      orderBy: { atualizadaEm: 'desc' }
     });
   }
 
@@ -138,8 +137,8 @@ class PlanilhaService {
   async obterPlanilha(id, usuarioId) {
     const planilha = await prisma.planilha.findFirst({
       where: {
-        id: parseInt(id),
-        id_usuario: usuarioId // Corrigido para snake_case
+        id: id,
+        usuarioId: usuarioId
       }
     });
 
@@ -157,12 +156,12 @@ class PlanilhaService {
     // Verificar se planilha existe e pertence ao usuário
     const planilhaExistente = await prisma.planilha.findFirst({
       where: {
-        id: parseInt(id),
-        id_usuario: usuarioId // Corrigido para snake_case
+        id: id,
+        usuarioId: usuarioId
       },
       include: {
         usuario: {
-          select: { tipo_plano: true } // Corrigido para snake_case
+          select: { tipoPlano: true }
         }
       }
     });
@@ -182,17 +181,13 @@ class PlanilhaService {
       dadosAtualizacao.dadosBase = dadosBase;
     }
 
-    if (colunasPersonalizadas !== undefined) {
-      dadosAtualizacao.colunasPersonalizadas = colunasPersonalizadas;
-    }
-
     // Se houver dados para verificar limites
     if (dadosBase || colunasPersonalizadas) {
-      const dadosParaVerificar = dadosBase || planilhaExistente.dados_base; // Corrigido
-      const colunasParaVerificar = colunasPersonalizadas || planilhaExistente.colunas_personalizadas; // Corrigido
+      const dadosParaVerificar = dadosBase || planilhaExistente.dadosBase;
+      const colunasParaVerificar = colunasPersonalizadas || { colunas: [] };
 
       const verificacao = this.verificarLimites(
-        planilhaExistente.usuario.tipo_plano, // Corrigido para snake_case
+        planilhaExistente.usuario.tipoPlano,
         dadosParaVerificar,
         colunasParaVerificar
       );
@@ -202,15 +197,10 @@ class PlanilhaService {
       }
     }
 
-    // Atualizar planilha - ajustar campos para snake_case
-    const dadosAtualizacaoCorrigidos = {};
-    if (nome !== undefined) dadosAtualizacaoCorrigidos.nome = nome;
-    if (dadosBase !== undefined) dadosAtualizacaoCorrigidos.dados_base = dadosBase;
-    if (colunasPersonalizadas !== undefined) dadosAtualizacaoCorrigidos.colunas_personalizadas = colunasPersonalizadas;
-
+    // Atualizar planilha
     return await prisma.planilha.update({
-      where: { id: parseInt(id) },
-      data: dadosAtualizacaoCorrigidos
+      where: { id: id },
+      data: dadosAtualizacao
     });
   }
 
@@ -219,8 +209,8 @@ class PlanilhaService {
     // Verificar se planilha existe e pertence ao usuário
     const planilha = await prisma.planilha.findFirst({
       where: {
-        id: parseInt(id),
-        id_usuario: usuarioId // Corrigido para snake_case
+        id: id,
+        usuarioId: usuarioId
       }
     });
 
@@ -238,17 +228,17 @@ class PlanilhaService {
   async obterLimitesPlano(usuarioId) {
     const usuario = await prisma.usuario.findUnique({
       where: { id: usuarioId },
-      select: { tipo_plano: true } // Corrigido para snake_case
+      select: { tipoPlano: true }
     });
 
     if (!usuario) {
       throw new Error('Usuário não encontrado');
     }
 
-    const limites = LIMITES_PLANO[usuario.tipo_plano];
+    const limites = LIMITES_PLANO[usuario.tipoPlano];
 
     return {
-      tipoPlano: usuario.tipo_plano,
+      tipoPlano: usuario.tipoPlano,
       limites
     };
   }

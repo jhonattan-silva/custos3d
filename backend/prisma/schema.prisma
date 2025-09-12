@@ -12,33 +12,29 @@ datasource db {
 
 // Modelo de usuários
 model Usuario {
-  id                  Int         @id @default(autoincrement())
-  nome                String?
-  email               String?     @unique
-  senha               String?
-  provedorOauth       String?     @map("provedor_oauth")
-  idProvedorOauth     String?     @map("id_provedor_oauth")
-  tipoPlano           String      @default("gratuito") @map("tipo_plano")
-  status              String      @default("ativo")
-  roleId              Int         @default(1) @map("role_id")
-  ultimoLogin         DateTime?   @map("ultimo_login")
-  criadoEm            DateTime    @default(now()) @map("criado_em")
-  atualizadoEm        DateTime    @updatedAt @map("atualizado_em")
+  id              String     @id @default(cuid())
+  nome            String
+  email           String     @unique
+  senha           String?
+  tipoPlano       String     @default("gratuito")
+  status          String     @default("ativo")
+  provedorOauth   String?
+  idProvedorOauth String?
+  roleId          Int?      @map("role_id")
+  criadoEm        DateTime   @default(now())
+  atualizadoEm    DateTime   @updatedAt
   
-  // Relacionamento com role
-  role                Role        @relation(fields: [roleId], references: [id])
-  
-  // Relacionamentos existentes
-  planilhas           Planilha[]
-  maquinas            Maquina[]
-  materiais           Material[]
-  tiposMaoObra        TipoMaoObra[]
-  projetos            Projeto[]
+  // Relacionamentos
+  role            Role?     @relation(fields: [roleId], references: [id])
+  planilhas       Planilha[]
+  maquinas        Maquina[]
+  materiais       Material[]
+  tiposMaoObra    TipoMaoObra[]
   
   @@map("usuarios")
 }
 
-// Modelo de roles (novo)
+// Modelo de roles
 model Role {
   id              Int      @id @default(autoincrement())
   nome            String   @unique
@@ -53,7 +49,7 @@ model Role {
   @@map("roles")
 }
 
-// Modelo de permissões (novo)
+// Modelo de permissões
 model Permissao {
   id              Int      @id @default(autoincrement())
   nome            String   @unique
@@ -68,7 +64,7 @@ model Permissao {
   @@map("permissoes")
 }
 
-// Modelo de relacionamento role-permissões (novo)
+// Modelo de relacionamento role-permissões
 model RolePermissao {
   id            Int      @id @default(autoincrement())
   roleId        Int      @map("role_id")
@@ -86,23 +82,45 @@ model RolePermissao {
 // Modelo de planilhas
 model Planilha {
   id                    Int      @id @default(autoincrement())
-  idUsuario             Int      @map("id_usuario")
+  usuarioId             String   @map("usuario_id")
   nome                  String   @default("Minha Planilha")
-  dadosBase             Json     @map("dados_base")
-  colunasPersonalizadas Json     @map("colunas_personalizadas")
-  criadaEm              DateTime @default(now()) @map("criada_em")
-  atualizadaEm          DateTime @updatedAt @map("atualizada_em")
+  dadosBase             Json     @map("dados_base") // Colunas padrão e linhas básicas
+  colunasPersonalizadas Json     @map("colunas_personalizadas") // Colunas adicionais para premium
+  criadoEm              DateTime @default(now()) @map("criado_em")
+  atualizadoEm          DateTime @updatedAt @map("atualizada_em")
   
-  // Relacionamento com usuário
-  usuario               Usuario  @relation(fields: [idUsuario], references: [id], onDelete: Cascade)
+  // Relacionamentos
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  itens   ItemPlanilha[]
   
   @@map("planilhas")
 }
 
-// Equipamentos de produção
+// Itens da planilha (linhas)
+model ItemPlanilha {
+  id                   Int      @id @default(autoincrement())
+  planilhaId           Int      @map("planilha_id")
+  maquinaId            Int?     @map("maquina_id")
+  materialId           Int?     @map("material_id")
+  ordemItem            Int      @map("ordem_item")
+  camposPadrao         Json     @map("campos_padrao")
+  camposCalculados     Json     @map("campos_calculados")
+  camposPersonalizados Json     @map("campos_personalizados")
+  criadoEm             DateTime @default(now()) @map("criado_em")
+  atualizadoEm         DateTime @updatedAt @map("atualizado_em")
+  
+  // Relacionamentos
+  planilha Planilha @relation(fields: [planilhaId], references: [id], onDelete: Cascade)
+  maquina  Maquina? @relation(fields: [maquinaId], references: [id])
+  material Material? @relation(fields: [materialId], references: [id])
+
+  @@map("itens_planilha")
+}
+
+// Equipamentos de produção (configurações do usuário)
 model Maquina {
   id                 Int      @id @default(autoincrement())
-  usuarioId          Int      @map("id_usuario")
+  usuarioId          String   @map("usuario_id")
   nome               String
   marca              String?
   modelo             String?
@@ -117,16 +135,16 @@ model Maquina {
   atualizadoEm       DateTime @updatedAt @map("atualizado_em")
   
   // Relacionamentos
-  usuario     Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  itens       ItemProjeto[]
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  itens   ItemPlanilha[]
 
   @@map("maquinas")
 }
 
-// Materiais/Insumos
+// Materiais/Insumos (configurações do usuário)
 model Material {
   id                 Int      @id @default(autoincrement())
-  usuarioId          Int      @map("id_usuario")
+  usuarioId          String   @map("usuario_id")
   nome               String
   tipoMaterial       String   @map("tipo_material")
   precoUnidade       Float    @map("preco_unidade")
@@ -140,16 +158,16 @@ model Material {
   atualizadoEm       DateTime @updatedAt @map("atualizado_em")
   
   // Relacionamentos
-  usuario     Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  itens       ItemProjeto[]
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  itens   ItemPlanilha[]
 
   @@map("materiais")
 }
 
-// Tipos de serviço/mão de obra
+// Tipos de serviço/mão de obra (configurações do usuário)
 model TipoMaoObra {
   id              Int      @id @default(autoincrement())
-  usuarioId       Int      @map("id_usuario")
+  usuarioId       String   @map("usuario_id")
   nome            String
   categoria       String
   valorPorMinuto  Float    @map("valor_por_minuto")
@@ -162,47 +180,4 @@ model TipoMaoObra {
   usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
   @@map("tipos_mao_obra")
-}
-
-// Renomear Planilha para Projeto (mais apropriado)
-model Projeto {
-  id                    Int      @id @default(autoincrement())
-  usuarioId             Int      @map("id_usuario") 
-  nome                  String   @default("Novo Projeto")
-  nomeCliente           String?  @map("nome_cliente")
-  status                String   @default("rascunho")
-  valorTotalEstimado    Float?   @map("valor_total_estimado")
-  margemLucroPercent    Float    @default(30) @map("margem_lucro_percent")
-  moeda                 String   @default("BRL")
-  dadosBase             Json     @map("dados_base")
-  colunasPersonalizadas Json     @map("colunas_personalizadas")
-  criadoEm              DateTime @default(now()) @map("criado_em")
-  atualizadoEm          DateTime @updatedAt @map("atualizado_em")
-  
-  // Relacionamentos
-  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  itens   ItemProjeto[]
-
-  @@map("projetos")
-}
-
-// Itens do projeto (linhas da planilha)
-model ItemProjeto {
-  id                   Int      @id @default(autoincrement())
-  projetoId            Int      @map("id_projeto")
-  maquinaId            Int?     @map("id_maquina")
-  materialId           Int?     @map("id_material")
-  ordemItem            Int      @map("ordem_item")
-  camposPadrao         Json     @map("campos_padrao")
-  camposCalculados     Json     @map("campos_calculados")
-  camposPersonalizados Json     @map("campos_personalizados")
-  criadoEm             DateTime @default(now()) @map("criado_em")
-  atualizadoEm         DateTime @updatedAt @map("atualizado_em")
-  
-  // Relacionamentos
-  projeto  Projeto  @relation(fields: [projetoId], references: [id], onDelete: Cascade)
-  maquina  Maquina? @relation(fields: [maquinaId], references: [id])
-  material Material? @relation(fields: [materialId], references: [id])
-
-  @@map("itens_projeto")
 }

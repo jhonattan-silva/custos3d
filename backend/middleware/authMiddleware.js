@@ -4,57 +4,25 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 // Middleware de autenticação
-const autenticarToken = async (req, res, next) => {
-  try {
-    // Obter token do header Authorization
-    const authHeader = req.headers.authorization;
-    const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+const autenticarToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
-    if (!token) {
-      return res.status(401).json({
-        erro: 'Token de acesso requerido'
-      });
-    }
-
-    // Verificar token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    // Verificar se usuário ainda existe
-    const usuario = await prisma.usuario.findUnique({
-      where: { id: decoded.usuarioId },
-      select: { id: true, email: true, tipoPlano: true }
-    });
-
-    if (!usuario) {
-      return res.status(401).json({
-        erro: 'Token inválido - usuário não encontrado'
-      });
-    }
-
-    // Adicionar dados do usuário à requisição
-    req.usuarioId = usuario.id;
-    req.usuario = usuario;
-
-    next();
-
-  } catch (error) {
-    if (error.name === 'JsonWebTokenError') {
-      return res.status(401).json({
-        erro: 'Token inválido'
-      });
-    }
-
-    if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({
-        erro: 'Token expirado'
-      });
-    }
-
-    console.error('Erro na autenticação:', error);
-    res.status(500).json({
-      erro: 'Erro interno do servidor'
+  if (!token) {
+    return res.status(401).json({
+      erro: 'Token de acesso requerido'
     });
   }
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) {
+      console.error('Erro na verificação do token:', err);
+      return res.status(403).json({ erro: 'Token inválido' });
+    }
+
+    req.usuarioId = decoded.usuarioId;
+    next();
+  });
 };
 
 // Middleware para verificar plano específico

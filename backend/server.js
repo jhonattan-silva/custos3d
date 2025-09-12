@@ -15,6 +15,8 @@ const PROD_CERT_PATH = "/etc/letsencrypt/live/seusite.com.br/";
 
 // Conexão com banco de dados
 const { conectarBanco } = require('./config/db');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
 // Middlewares globais
 app.use(express.json({ limit: '10mb' }));
@@ -25,11 +27,32 @@ app.use(cors());
 
 // Rotas
 const usuariosRoutes = require('./routes/usuariosRoutes');
+const planilhasRoutes = require('./routes/planilhasRoutes');
 app.use('/api/usuarios', usuariosRoutes);
+app.use('/api/planilhas', planilhasRoutes);
 
 // Rota de teste 
 app.get('/', (req, res) => {
   res.json({ message: 'API funcionando!' });
+});
+
+// Rota de teste do banco
+app.get('/api/test/db', async (req, res) => {
+  try {
+    const count = await prisma.usuario.count();
+    res.json({ 
+      sucesso: true, 
+      mensagem: 'Banco funcionando!',
+      totalUsuarios: count 
+    });
+  } catch (error) {
+    console.error('Erro no teste do banco:', error);
+    res.status(500).json({ 
+      sucesso: false, 
+      erro: 'Erro no banco de dados',
+      detalhes: error.message 
+    });
+  }
 });
 
 // Inicialização do servidor
